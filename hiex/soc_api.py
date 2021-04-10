@@ -58,6 +58,7 @@ class SamplingAndOcclusionExplain:
         return lm_model
 
     def train_lm(self):
+        # language model is being trained here.
         logger.info('Missing pretrained LM. Now training')
         model = BiGRULanguageModel(self.configs, vocab=self.vocab, device=self.device).to(self.device)
         do_train_lm(model, lm_dir=self.lm_dir, lm_epochs=20,
@@ -125,7 +126,7 @@ class SamplingAndOcclusionExplain:
                 word_id = input_ids[i].item()
                 if word_id in self.neutral_words_ids:
                     nw_positions.append(i)
-            # only generate explanations for neutral words
+            # important: only generate explanations for neutral words
             for i in range(len(input_ids)):
                 word_id = input_ids[i].item()
                 if word_id in self.neutral_words_ids:
@@ -137,12 +138,14 @@ class SamplingAndOcclusionExplain:
                         score = self.algo.do_attribution(input_ids, input_mask, segment_ids, x_region, label_ids,
                                                          return_variable=True, additional_mask=nw_positions)
                     else:
+                        #soc score being calculated here for each neutral_word occurrence.
                         score = self.algo.do_attribution_pad_variant(input_ids, input_mask, segment_ids,
                                                                      x_region, label_ids, return_variable=True,
                                                                      additional_mask=nw_positions)
                     score = self.configs.reg_strength * (score ** 2)
 
                     if do_backprop:
+                        #back propagation after computing explanation loss happening here.
                         score.backward()
 
                     neutral_word_scores.append(score.item())

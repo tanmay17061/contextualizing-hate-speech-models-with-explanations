@@ -117,6 +117,7 @@ def main():
                         required=True,
                         help="The output directory where the model predictions and checkpoints will be written.")
     parser.add_argument("--negative_weight", default=1., type=float)
+    # supply neutral words through this argument.
     parser.add_argument("--neutral_words_file", default='data/identity.csv')
 
     # if true, use test data instead of val data
@@ -135,6 +136,7 @@ def main():
     parser.add_argument("--output_filename", default='temp.tmp')
 
     # see utils/config.py
+    #not sure what padding_variant means. seems like *some variant of SOC* that has something to do with padding. note that it is the default variant being used here (default =True).
     parser.add_argument("--use_padding_variant", action='store_true')
     parser.add_argument("--mask_outside_nb", action='store_true')
     parser.add_argument("--nb_range", type=int)

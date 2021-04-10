@@ -46,6 +46,8 @@ class GabProcessor(DataProcessor):
         f = open(os.path.join(data_dir, '%s.jsonl' % split))
         examples = []
         for i, line in enumerate(f.readlines()):
+            # data being read from '/data/majority_gab_dataset_25k/train.jsonl'
+            # TODO: convert gab dataset to '.jsonl'.
             data = json.loads(line)
             example = InputExample(text_a=data['Text'], guid='%s-%s' % (split, i))
 
@@ -93,7 +95,7 @@ class GabProcessor(DataProcessor):
             tokens = self.tokenizer.tokenize(example.text_a)
             if len(tokens) > self.max_seq_length - 2:
                 tokens = tokens[:(self.max_seq_length - 2)]
-            tokens = ["[CLS]"] + tokens + ["[SEP]"]
+            tokens = [self.tokenizer._cls_token] + tokens + [self.tokenizer._sep_token]
             input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
 
             if self.configs.remove_nw:

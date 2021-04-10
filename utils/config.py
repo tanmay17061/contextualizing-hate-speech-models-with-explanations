@@ -17,6 +17,7 @@ class Config:
         # create a classifier head for each item in the list with disjunction of each label
         # for example, [('hd','cv')] means the ground truth label for classification is 1 when hd OR cv is 1.
         # multi-head classifier not implemented. So len(self.label_groups) == 1 should hold.
+        #label_groups will contain labels that correspond to hate.
         self.label_groups = [('hd','cv')]
         self.do_lower_case = True
         self.bert_model = 'bert-base-uncased'

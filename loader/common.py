@@ -90,7 +90,7 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
 
 def convert_examples_to_features(examples, label_list, max_seq_length,
                                  tokenizer, output_mode, configs):
-    """Loads a data file into a list of `InputBatch`s."""
+    """Loads a data file into a list of `InputFeatures`s."""
 
     neutral_words_file = configs.neutral_words_file
     remove_nw = configs.remove_nw
@@ -149,10 +149,10 @@ def convert_examples_to_features(examples, label_list, max_seq_length,
         # For classification tasks, the first vector (corresponding to [CLS]) is
         # used as as the "sentence vector". Note that this only makes sense because
         # the entire model is fine-tuned.
-        tokens = ["[CLS]"] + tokens_a + ["[SEP]"]
+        tokens = [tokenizer._cls_token] + tokens_a + [tokenizer._sep_token]
 
         if tokens_b:
-            tokens += tokens_b + ["[SEP]"]
+            tokens += tokens_b + [tokenizer._sep_token]
             segment_ids += [1] * (len(tokens_b) + 1)
 
         input_ids = tokenizer.convert_tokens_to_ids(tokens)
