@@ -95,7 +95,7 @@ class GabProcessor(DataProcessor):
             tokens = self.tokenizer.tokenize(example.text_a)
             if len(tokens) > self.max_seq_length - 2:
                 tokens = tokens[:(self.max_seq_length - 2)]
-            tokens = [self.tokenizer._cls_token] + tokens + [self.tokenizer._sep_token]
+            tokens = ["[CLS]"] + tokens + ["[SEP]"]
             input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
 
             if self.configs.remove_nw:

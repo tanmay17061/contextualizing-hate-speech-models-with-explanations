@@ -94,15 +94,18 @@ class SamplingAndOcclusionExplain:
         self.output_file.close()
 
     def _initialize_neutral_words(self):
+        print('_initialize_neutral_words called')
         f = open(self.neutral_words_file)
         neutral_words = []
         neutral_words_ids = set()
         for line in f.readlines():
             word = line.strip().split('\t')[0]
+            print('word =',word)
             canonical = self.tokenizer.tokenize(word)
             if len(canonical) > 1:
+                print('canonical longer than 1 token =',canonical)
                 canonical.sort(key=lambda x: -len(x))
-                print(canonical)
+                print('sorted to =',canonical)
             word = canonical[0]
             neutral_words.append(word)
             neutral_words_ids.add(self.tokenizer.vocab[word])

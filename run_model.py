@@ -137,7 +137,7 @@ def main():
 
     # see utils/config.py
     #not sure what padding_variant means. seems like *some variant of SOC* that has something to do with padding. note that it is the default variant being used here (default =True).
-    parser.add_argument("--use_padding_variant", action='store_true')
+    parser.add_argument("--use_padding_variant", action='store_false')
     parser.add_argument("--mask_outside_nb", action='store_true')
     parser.add_argument("--nb_range", type=int)
     parser.add_argument("--sample_n", type=int)
@@ -287,6 +287,9 @@ def main():
     logger.info("device: {} n_gpu: {}, distributed training: {}, 16-bits training: {}".format(
         device, n_gpu, bool(args.local_rank != -1), args.fp16))
 
+    #print('hardsetting device to cpu')
+    #device = torch.device("cpu")
+
     if args.gradient_accumulation_steps < 1:
         raise ValueError("Invalid gradient_accumulation_steps parameter: {}, should be >= 1".format(
             args.gradient_accumulation_steps))
@@ -401,6 +404,7 @@ def main():
     early_stop_countdown = args.early_stop
 
     if args.reg_explanations:
+        print('reg_explanations is True')
         train_lm_dataloder = processor.get_dataloader('train', configs.train_batch_size)
         dev_lm_dataloader = processor.get_dataloader('dev', configs.train_batch_size)
         explainer = SamplingAndOcclusionExplain(model, configs, tokenizer, device=device, vocab=tokenizer.vocab,
@@ -412,6 +416,7 @@ def main():
 
                                                 )
     else:
+        print('reg_explanations is False')
         explainer = None
 
     if args.do_train:
@@ -524,8 +529,10 @@ def main():
 def validate(args, model, processor, tokenizer, output_mode, label_list, device, num_labels,
              task_name, tr_loss, global_step, epoch, explainer=None):
     if not args.test:
+        print("validating with dev data")
         eval_examples = processor.get_dev_examples(args.data_dir)
     else:
+        print("validating with test data")
         eval_examples = processor.get_test_examples(args.data_dir)
     eval_features = convert_examples_to_features(
         eval_examples, label_list, args.max_seq_length, tokenizer, output_mode, configs)

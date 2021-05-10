@@ -11,7 +11,9 @@ class BiGRULanguageModel(nn.Module):
         super().__init__()
         self.hidden_size = config.lm_d_hidden
         self.embed_size = config.lm_d_embed
-        self.n_vocab = len(vocab)
+        print(f'LM stats...')
+        print(f'hidden_size = {self.hidden_size}, embed_size = {self.embed_size}')
+        self.n_vocab = len(vocab)#//10
         self.gpu = 0
         self.device = device
 
