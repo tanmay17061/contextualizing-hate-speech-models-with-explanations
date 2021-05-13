@@ -65,7 +65,7 @@ class WSProcessor(DataProcessor):
             tokens = self.tokenizer.tokenize(example.text_a)
             if len(tokens) > self.max_seq_length - 2:
                 tokens = tokens[:(self.max_seq_length - 2)]
-            tokens = ["[CLS]"] + tokens + ["[SEP]"]
+            tokens = [self.tokenizer.cls_token] + tokens + [self.tokenizer.sep_token]
             input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
             padding = [0] * (self.max_seq_length - len(input_ids))
             input_ids += padding

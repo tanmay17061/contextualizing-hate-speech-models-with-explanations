@@ -37,7 +37,8 @@ from sklearn.metrics import matthews_corrcoef, f1_score
 
 from .file_utils import PYTORCH_PRETRAINED_BERT_CACHE, WEIGHTS_NAME, CONFIG_NAME
 from .modeling import BertForSequenceClassification, BertConfig
-from .tokenization import BertTokenizer
+#from .tokenization import BertTokenizer
+from transformers import AutoTokenizer
 from .optimization import BertAdam, WarmupLinearSchedule
 
 logger = logging.getLogger(__name__)
@@ -445,11 +446,11 @@ def convert_examples_to_features(examples, label_list, max_seq_length,
         # For classification tasks, the first vector (corresponding to [CLS]) is
         # used as as the "sentence vector". Note that this only makes sense because
         # the entire model is fine-tuned.
-        tokens = ["[CLS]"] + tokens_a + ["[SEP]"]
+        tokens = [tokenizer.cls_token] + tokens_a + [tokenizer.sep_token]
         segment_ids = [0] * len(tokens)
 
         if tokens_b:
-            tokens += tokens_b + ["[SEP]"]
+            tokens += tokens_b + [tokenizer.sep_token]
             segment_ids += [1] * (len(tokens_b) + 1)
 
         input_ids = tokenizer.convert_tokens_to_ids(tokens)
@@ -733,7 +734,7 @@ def main():
     label_list = processor.get_labels()
     num_labels = len(label_list)
 
-    tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
+    tokenizer = AutoTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
 
     train_examples = None
     num_train_optimization_steps = None

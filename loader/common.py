@@ -102,7 +102,8 @@ def convert_examples_to_features(examples, label_list, max_seq_length,
         for line in f.readlines():
             word = line.strip().split('\t')[0]
             neutral_words.append(word)
-            neutral_words_ids.add(tokenizer.vocab[word])
+            print('adding neutral word id:', tokenizer.get_vocab()[word])
+            neutral_words_ids.add(tokenizer.get_vocab()[word])
         return neutral_words_ids
 
     neutral_word_ids = []
@@ -149,10 +150,10 @@ def convert_examples_to_features(examples, label_list, max_seq_length,
         # For classification tasks, the first vector (corresponding to [CLS]) is
         # used as as the "sentence vector". Note that this only makes sense because
         # the entire model is fine-tuned.
-        tokens = ["[CLS]"] + tokens_a + ["[SEP]"]
+        tokens = [tokenizer.cls_token] + tokens_a + [tokenizer.sep_token]
 
         if tokens_b:
-            tokens += tokens_b + ["[SEP]"]
+            tokens += tokens_b + [tokeniser.sep_token]
             segment_ids += [1] * (len(tokens_b) + 1)
 
         input_ids = tokenizer.convert_tokens_to_ids(tokens)
@@ -164,7 +165,7 @@ def convert_examples_to_features(examples, label_list, max_seq_length,
         input_mask = [1] * len(input_ids)
 
         # Zero-pad up to the sequence length.
-        padding = [0] * (max_seq_length - len(input_ids))
+        padding = [0 for i in range(max_seq_length - len(input_ids))]
         input_ids += padding
         input_mask += padding
         segment_ids += padding

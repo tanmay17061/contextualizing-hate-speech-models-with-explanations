@@ -109,11 +109,11 @@ class _SamplingAndOcclusionBaseAlgo:
                 # TODO: test performance of this
                 new_mask_seq.append(0)
             else:
-                new_seq.append(self.tokenizer.vocab['[PAD]'])
+                new_seq.append(self.tokenizer.pad_token_id)
                 new_mask_seq.append(0)
                 # flg = True
         if not new_seq:
-            new_seq.append(self.tokenizer.vocab['[PAD]'])
+            new_seq.append(self.tokenizer.pad_token_id)
         new_seq = np.array(new_seq)
         new_mask_seq = np.array(new_mask_seq)
         return new_seq, new_mask_seq
@@ -271,7 +271,7 @@ class _SamplingAndOcclusionAlgo(_SamplingAndOcclusionBaseAlgo):
         inp_lm = copy.copy(inp)
         for i in range(len(inp_lm)):
             if nb_region[0] <= i <= nb_region[1] and not x_region[0] <= i <= x_region[1]:
-                inp_lm[i] = self.tokenizer.vocab['[PAD]']
+                inp_lm[i] = self.tokenizer.pad_token_id
 
         inp_th = torch.from_numpy(inp_lm).long().view(-1, 1)
         inp_length = torch.LongTensor([inp_length])
@@ -310,7 +310,7 @@ class _SamplingAndOcclusionAlgo(_SamplingAndOcclusionBaseAlgo):
                 if self.mask_outside_nb:
                     for i in range(len(filled_inp)):
                         if 1 <= i < nb_region[0] or nb_region[1] < i <= inp_length - 2:
-                            filled_inp[i] = self.tokenizer.vocab['[PAD]']
+                            filled_inp[i] = self.tokenizer.pad_token_id
 
                 len_bw = x_region[0] - nb_region[0]
                 len_fw = nb_region[1] - x_region[1]
@@ -325,7 +325,7 @@ class _SamplingAndOcclusionAlgo(_SamplingAndOcclusionBaseAlgo):
                     filled_inp_.append(filled_inp[i])
                     mask_inp_.append(inp_mask[i])
                 else:
-                    filled_inp_.append(self.tokenizer.vocab['[PAD]'])
+                    filled_inp_.append(self.tokenizer.pad_token_id)
                     mask_inp_.append(0)
 
             filled_ex, mask_ex = [], []
@@ -336,7 +336,7 @@ class _SamplingAndOcclusionAlgo(_SamplingAndOcclusionBaseAlgo):
                     mask_ex.append(inp_mask[i])
                 else:
                     if self.configs.keep_other_nw:
-                        filled_ex.append(self.tokenizer.vocab['[PAD]'])
+                        filled_ex.append(self.tokenizer.pad_token_id)
                         mask_ex.append(0)
 
             filled_inp_ = np.array(filled_inp_, dtype=np.int32)
@@ -362,8 +362,8 @@ class _SamplingAndOcclusionAlgo(_SamplingAndOcclusionBaseAlgo):
         inp_enb_mask = inp_enb_mask.expand(inp_enb.size(0), -1)
         segment_ids = segment_ids.expand(inp_enb.size(0), -1)
 
-        logits_enb = self.model(inp_enb, segment_ids[:, :inp_enb.size(1)], inp_enb_mask)
-        logits_ex = self.model(inp_ex, segment_ids[:, :inp_ex.size(1)], inp_ex_mask)
+        logits_enb = self.model(input_ids = inp_enb, attention_mask = inp_enb_mask, token_type_ids = segment_ids[:, :inp_enb.size(1)]).logits
+        logits_ex = self.model(input_ids = inp_ex, attention_mask = inp_ex_mask, token_type_ids = segment_ids[:, :inp_ex.size(1)]).logits
 
         if type(logits_enb) is tuple:
             logits_enb = logits_enb[0]
@@ -417,8 +417,8 @@ class _SamplingAndOcclusionAlgo(_SamplingAndOcclusionBaseAlgo):
             inp_enb, inp_mask_enb, inp_ex, inp_mask_ex = inp_enb.to(self.gpu), inp_mask_enb.to(self.gpu), \
                                                          inp_ex.to(self.gpu), inp_mask_ex.to(self.gpu)
             segment_ids = segment_ids.to(self.gpu)
-        logits_enb = self.model(inp_enb, segment_ids[:, :inp_enb.size(1)], inp_mask_enb)
-        logits_ex = self.model(inp_ex, segment_ids[:, :inp_ex.size(1)], inp_mask_ex)
+        logits_enb = self.model(input_ids = inp_enb, attention_mask = inp_mask_enb, token_type_ids = segment_ids[:, :inp_enb.size(1)]).logits
+        logits_ex = self.model(input_ids = inp_ex, attention_mask = inp_mask_ex, token_type_ids = segment_ids[:, :inp_ex.size(1)]).logits
         contrib_logits = logits_enb - logits_ex  # [1 * C]
 
         contrib_score = contrib_logits[0, 1] - contrib_logits[0, 0]
@@ -428,7 +428,7 @@ class _SamplingAndOcclusionAlgo(_SamplingAndOcclusionBaseAlgo):
             return contrib_score
     
     def do_hierarchical_explanation(self, input_ids, input_mask, segment_ids, label_ids):
-        logits_pred = self.model(input_ids, segment_ids, input_mask)
+        logits_pred = self.model(input_ids = input_ids, attention_mask = input_mask, token_type_ids = segment_ids).logits
         logits_pred = logits_pred[:,1] - logits_pred[:,0]
 
         inp = input_ids.view(-1).cpu().numpy()

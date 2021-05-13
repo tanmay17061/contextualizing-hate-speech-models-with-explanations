@@ -37,7 +37,7 @@ class Config:
         self.sample_n = 20
 
         # keep self.max_seq_length identical for that training bert. Both are 128 by default
-        self.max_seq_length = 128
+        self.max_seq_length = 64
 
         # whether pad the words outside the context region of a given phrase to be explained
         # when turned TRUE, SOC yields completely global explanations, and achieve better correlation
@@ -50,7 +50,7 @@ class Config:
 
         # whether pad the context of the phrase instead of sampling. Turning
         # NOTE: only configure this with command line
-        self.use_padding_variant = False
+        self.use_padding_variant = 0
 
         # neutral words
         self.neutral_words_file = 'data/identity.csv'

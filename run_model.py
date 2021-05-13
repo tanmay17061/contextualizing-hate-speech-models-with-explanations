@@ -45,9 +45,10 @@ from sklearn.metrics import matthews_corrcoef, f1_score
 from sklearn.metrics import precision_score, recall_score, roc_auc_score
 
 from bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE, WEIGHTS_NAME, CONFIG_NAME
-from bert.modeling import BertForSequenceClassification, BertConfig
-from bert.tokenization import BertTokenizer
+#from bert.modeling import BertForSequenceClassification, BertConfig
+#from bert.tokenization import BertTokenizer
 from bert.optimization import BertAdam, WarmupLinearSchedule
+from transformers import AutoTokenizer,BertForSequenceClassification, XLMRobertaForSequenceClassification
 
 from loader import GabProcessor, WSProcessor, NytProcessor, convert_examples_to_features
 from utils.config import configs, combine_args
@@ -137,7 +138,8 @@ def main():
 
     # see utils/config.py
     #not sure what padding_variant means. seems like *some variant of SOC* that has something to do with padding. note that it is the default variant being used here (default =True).
-    parser.add_argument("--use_padding_variant", action='store_false')
+    #parser.add_argument("--use_padding_variant", action='store_false')
+    parser.add_argument("--use_padding_variant", default=0, type=int)
     parser.add_argument("--mask_outside_nb", action='store_true')
     parser.add_argument("--nb_range", type=int)
     parser.add_argument("--sample_n", type=int)
@@ -320,7 +322,8 @@ def main():
     if task_name not in processors:
         raise ValueError("Task not found: %s" % (task_name))
 
-    tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
+    tokenizer = AutoTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
+    print('tokenizer vocab_size = ',tokenizer.vocab_size)
     processor = processors[task_name](configs, tokenizer=tokenizer)
     output_mode = output_modes[task_name]
 
@@ -340,11 +343,7 @@ def main():
     cache_dir = args.cache_dir if args.cache_dir else os.path.join(str(PYTORCH_PRETRAINED_BERT_CACHE),
                                                                    'distributed_{}'.format(args.local_rank))
     if args.do_train:
-        model = BertForSequenceClassification.from_pretrained(args.bert_model,
-                                                              cache_dir=cache_dir,
-                                                              num_labels=num_labels)
-    else:
-        model = BertForSequenceClassification.from_pretrained(args.output_dir, num_labels=num_labels)
+        model = BertForSequenceClassification.from_pretrained(args.bert_model)
     model.to(device)
 
     if args.fp16:
@@ -407,7 +406,7 @@ def main():
         print('reg_explanations is True')
         train_lm_dataloder = processor.get_dataloader('train', configs.train_batch_size)
         dev_lm_dataloader = processor.get_dataloader('dev', configs.train_batch_size)
-        explainer = SamplingAndOcclusionExplain(model, configs, tokenizer, device=device, vocab=tokenizer.vocab,
+        explainer = SamplingAndOcclusionExplain(model, configs, tokenizer, device=device, vocab=tokenizer.get_vocab(),
                                                 train_dataloader=train_lm_dataloder,
                                                 dev_dataloader=dev_lm_dataloader,
                                                 lm_dir=args.lm_dir,
@@ -416,7 +415,6 @@ def main():
 
                                                 )
     else:
-        print('reg_explanations is False')
         explainer = None
 
     if args.do_train:
@@ -454,7 +452,7 @@ def main():
                 input_ids, input_mask, segment_ids, label_ids = batch
 
                 # define a new function to compute loss values for both output_modes
-                logits = model(input_ids, segment_ids, input_mask, labels=None)
+                logits = model(input_ids = input_ids, attention_mask = input_mask, token_type_ids = segment_ids, labels=None).logits
 
                 if output_mode == "classification":
                     loss_fct = CrossEntropyLoss(class_weight)
@@ -529,10 +527,8 @@ def main():
 def validate(args, model, processor, tokenizer, output_mode, label_list, device, num_labels,
              task_name, tr_loss, global_step, epoch, explainer=None):
     if not args.test:
-        print("validating with dev data")
         eval_examples = processor.get_dev_examples(args.data_dir)
     else:
-        print("validating with test data")
         eval_examples = processor.get_test_examples(args.data_dir)
     eval_features = convert_examples_to_features(
         eval_examples, label_list, args.max_seq_length, tokenizer, output_mode, configs)
@@ -569,7 +565,7 @@ def validate(args, model, processor, tokenizer, output_mode, label_list, device,
         label_ids = label_ids.to(device)
 
         with torch.no_grad():
-            logits = model(input_ids, segment_ids, input_mask, labels=None)
+            logits = model(input_ids = input_ids, attention_mask = input_mask, token_type_ids = segment_ids, labels=None).logits
 
         # create eval loss and other metric required by the task
         if output_mode == "classification":
@@ -666,7 +662,7 @@ def explain(args, model, processor, tokenizer, output_mode, label_list, device):
             train_lm_dataloder = None
             dev_lm_dataloader = None
 
-        explainer = SamplingAndOcclusionExplain(model, configs, tokenizer, device=device, vocab=tokenizer.vocab,
+        explainer = SamplingAndOcclusionExplain(model, configs, tokenizer, device=device, vocab=tokenizer.get_vocab(),
                                                 train_dataloader=train_lm_dataloder,
                                                 dev_dataloader=dev_lm_dataloader,
                                                 lm_dir=args.lm_dir,

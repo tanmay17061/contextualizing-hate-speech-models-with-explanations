@@ -108,7 +108,7 @@ class SamplingAndOcclusionExplain:
                 print('sorted to =',canonical)
             word = canonical[0]
             neutral_words.append(word)
-            neutral_words_ids.add(self.tokenizer.vocab[word])
+            neutral_words_ids.add(self.tokenizer.get_vocab()[word])
         self.neutral_words = neutral_words
         self.neutral_words_ids = neutral_words_ids
         assert neutral_words
